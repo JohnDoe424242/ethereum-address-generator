@@ -20,7 +20,6 @@ def parse_path(path):
     Method from 'two1.bitcoin.crypto'
     """
     if isinstance(path, str):
-        # Remove trailing "/"
         p = path.rstrip("/").split("/")
     elif isinstance(path, bytes):
         p = path.decode('utf-8').rstrip("/").split("/")
@@ -62,26 +61,16 @@ def from_parent(parent_key, index):
 
     if index < 0 or index > 0xffffffff:
         raise ValueError("index is out of range: 0 <= index <= 2**32 - 1")
-
-    # Get curve n parameter.
     curve_n = int(curve.params['n'])
-
-    # Unpack parent key
     parent_key, hmac_key = parent_key
-
     if index & 0x80000000:
         hmac_data = b'\x00' + parent_key.to_bytes(length=32, byteorder='big')
     else:
-        # Create default curve public key from private
         public_key = curve.private_to_public(
             parent_key.to_bytes(length=32, byteorder='big'))
-
-        # Get public key coordinates
         x, y = curve.decode_public_key(public_key)
         x = int.from_bytes(x, byteorder='big')
         y = int.from_bytes(y, byteorder='big')
-
-        # Generate hmac data
         hmac_data = (bytes([(y & 0x1) + 0x02]) +
                      x.to_bytes(curve._backend.public_key_length, 'big'))
     hmac_data += index.to_bytes(length=4, byteorder='big')
